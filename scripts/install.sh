@@ -11,13 +11,15 @@
 #   current.txt         active version id
 #   versions/<id>/      worker: perfetto-mcp + tools/trace_processor_shell
 # Re-running while the server is in use is safe: the running supervisor switches to the new
-# version within seconds. --auto-config registers it with Claude Code (user scope).
+# version within seconds. --auto-config registers it with Claude Code (user scope) and installs the
+# 'perfetto-analysis' skill; --skill installs only the skill.
 set -eu
 
 SRC=""
 PREFIX="${HOME}/.local/share/perfetto-mcp"
 BIN_DIR="${HOME}/.local/bin"
 AUTO=0
+SKILL=0
 VERSION=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -25,7 +27,8 @@ while [ $# -gt 0 ]; do
     --bin-dir) BIN_DIR="$2"; shift 2 ;;
     --version) VERSION="${2#v}"; shift 2 ;;
     --auto-config) AUTO=1; shift ;;
-    -h|--help) echo "usage: install.sh [tarball|dir] [--version X.Y.Z] [--prefix DIR] [--bin-dir DIR] [--auto-config]"; exit 0 ;;
+    --skill) SKILL=1; shift ;;
+    -h|--help) echo "usage: install.sh [tarball|dir] [--version X.Y.Z] [--prefix DIR] [--bin-dir DIR] [--auto-config] [--skill]"; exit 0 ;;
     -*) echo "unknown option: $1" >&2; exit 2 ;;
     *) SRC="$1"; shift ;;
   esac
@@ -117,6 +120,17 @@ if [ "$AUTO" = 1 ]; then
     echo "Registered with Claude Code (user scope) as 'perfetto'."
   else
     echo "claude CLI not found; register manually (see below)." >&2
+  fi
+fi
+if [ "$AUTO" = 1 ] || [ "$SKILL" = 1 ]; then
+  if [ -d "$SRC/skills/perfetto-analysis" ]; then
+    SKILL_DEST="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/perfetto-analysis"
+    rm -rf "$SKILL_DEST"
+    mkdir -p "$(dirname "$SKILL_DEST")"
+    cp -R "$SRC/skills/perfetto-analysis" "$SKILL_DEST"
+    echo "Installed the Claude Code skill 'perfetto-analysis' to $SKILL_DEST."
+  else
+    echo "warning: this package has no skills/perfetto-analysis; skill not installed." >&2
   fi
 fi
 cat <<EOF

@@ -95,57 +95,30 @@ internal static class ProtocolVersions
 
 internal static class ServerInstructions
 {
+    // Claude Code truncates server instructions at 4096 characters; scenario playbooks live in the skill.
     public const string Text = """
-        Perfetto trace analysis server (Android-focused). Workflow:
+        Perfetto trace analysis for Android performance.
 
-        1. `load_trace` first. It returns a `trace_id` and a health/overview summary. Loading several traces
-           (e.g. base vs fix) is supported; every other tool takes an optional `trace_id` and defaults to the
-           most recently loaded trace.
+        1. `load_trace` first: it returns a `trace_id` and an overview (health issues, launches, top CPU, hints).
+           Other tools take an optional `trace_id` (default: the latest load, which other agents sharing this server
+           can change); pass it explicitly whenever more than one trace is loaded. Load two traces for base vs fix.
+        2. Use the dedicated tools before SQL; they already use the right stdlib modules and joins:
+           launches `android_startups` | jank `android_jank_frames`, `frame_intervals` | ANR `android_anrs` |
+           CPU `cpu_top_threads`, `cpu_frequency`, `cpu_profile` | heaviest slices `slice_hotspots` |
+           thread states `thread_state_breakdown` |
+           who a thread waited for `wakeup_chain` (critical path) | binder and locks `android_binder_txns`,
+           `lock_contention`, `main_thread_blocking_calls` | memory and IO `memory_summary`, `process_memory`,
+           `io_summary`, `android_gc` | logs `android_logs` | operation latency `event_latency` | heap `java_heap` |
+           boot `analyze_bootchart`, `boot_timeline` | diff `compare_traces` | device capture `record_trace`,
+           `record_boot` (REBOOTS the device), `profile_threads`.
+        3. Drill down by window: a symptom's time range (e.g. frame_intervals gap_start_ts / gap_end_ts) becomes
+           ts_start / ts_end for thread_state_breakdown, cpu_profile, cpu_frequency and wakeup_chain.
+        4. `execute_sql` for the rest: prefer `INCLUDE PERFETTO MODULE <module>; SELECT ...` (find modules with
+           `list_stdlib_modules`) over raw slice scans with LIKE. Timestamps are nanoseconds. Aggregate in SQL:
+           rows are capped at `max_rows`.
+        5. A query past `timeout_s` restarts the trace processor and the trace reloads on next use: narrow the
+           window or filter and retry. Calls on one trace run one at a time, so issue them sequentially.
 
-        2. Prefer the dedicated tools for common questions — they already use the right stdlib modules and joins:
-           - `android_startups`        app cold/warm/hot launches and their main-thread breakdown
-           - `android_jank_frames`     janky frames per process (FrameTimeline)
-           - `thread_state_breakdown`  Running / Runnable / Sleeping / D-state time for a thread or process in a window
-           - `cpu_top_threads`         who used the CPU in a window
-           - `android_binder_txns`     slowest binder transactions
-           - `slice_hotspots`          heaviest slices (by total or max duration) for a process / thread / name
-           - `frame_intervals`         fps / freezes of any render thread (eglSwapBuffers, doFrame ...), incl. GL/SurfaceView apps
-           - `cpu_profile`             perf callstack hotspots per thread/window; unsymbolized frames as lib.so+0x<rel_pc>
-           - `profile_threads`         sample chosen threads on the device now (simpleperf): self / inclusive hot
-                                       functions, incl. kernel threads and system_server threads (root)
-           - `cpu_frequency`           time-weighted CPU frequency per cluster (throttling check)
-           - `android_gc` / `android_logs`  ART GC cost; logcat search aligned with the timeline
-           - `memory_summary` / `process_memory`  memory pressure (MemAvailable, swap, LMK, direct reclaim) / one process's RSS
-           - `io_summary`              who is blocked in D state and on what; block-device latency; page-cache reads
-           - `compare_traces`          base vs fix diff of startup / CPU / main-thread states / binder / GC / memory / slices
-           - `android_anrs`            ANRs and what the main thread was doing / stuck in before each
-           - `lock_contention`         Java monitor contention by lock holder; links system_server waits to binder clients
-           - `wakeup_chain`            who a thread was waiting for: wakers of its sleeps hop by hop, plus the critical path
-                                       (which threads held up its progress) for windows up to 30 s
-           - `main_thread_blocking_calls`  curated main-thread blocking calls (binder, locks, inflate, draw ...) per process
-           - `analyze_bootchart`       Android init bootchart (dir or .tgz, no trace needed): boot phases and who slowed them
-           - `boot_timeline`           boot trace: boot_progress milestones, system_server phases, slowest service starts
-           - `record_trace`            capture a trace on an adb device (built-in `scenario` / `heap` configs), pull and load it
-           - `record_boot`             REBOOT an adb device and capture bootchart + boot trace, then analyze both
-           - `java_heap`               Java heap dump: retained classes, UI objects, bitmaps, growth vs a baseline dump,
-                                       `class_name` = shortest reference path to a GC root (who keeps it alive)
-           - `server_stats`            this server's tool durations and slow queries (performance diagnosis)
-
-           Typical drill-down: frame_intervals finds a freeze -> pass its gap_start_ts/gap_end_ts as ts_start/ts_end to
-           thread_state_breakdown, cpu_profile and cpu_frequency to see what the thread did and why; wakeup_chain over the
-           same window names the thread it was really waiting on (critical_path).
-           Leak check: record_trace(config="heap", process=X) -> repeat the scenario -> heap dump again ->
-           java_heap(baseline_trace_id=...) -> java_heap(class_name=<growing class>) for who holds it.
-           Performance: tools on one trace run one at a time; call them sequentially, `server_stats` shows where time went.
-
-        3. `execute_sql` for everything else. PREFER PerfettoSQL stdlib over raw `slice` + `LIKE '%x%'` scans:
-           `INCLUDE PERFETTO MODULE <name>; SELECT ...` in a single call. Useful modules:
-           android.startup.startups, android.frames.timeline, android.binder, android.anrs,
-           android.garbage_collection, android.monitor_contention, sched.time_in_state, slices.with_context,
-           linux.cpu.frequency. Full list: `list_stdlib_modules`; docs: https://perfetto.dev/docs/analysis/stdlib-docs
-
-        4. Timestamps are nanoseconds. Aggregate in SQL instead of pulling raw rows — results are truncated at
-           `max_rows`. Long queries are cancelled after `timeout_s`; the trace processor is then restarted and the
-           trace reloaded automatically, so narrow the query (time window, upid/utid filter, LIMIT) and retry.
+        Step-by-step playbooks per scenario: the `perfetto-analysis` skill, when installed.
         """;
 }

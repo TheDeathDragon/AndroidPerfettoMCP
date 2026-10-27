@@ -32,6 +32,11 @@
     <EmbeddedResource Include="..\..\configs\idle.pbtxt" LogicalName="config.idle.pbtxt" />
   </ItemGroup>
 
+  <!-- Claude Code skill shipped in the release archive; the installers copy it to ~/.claude/skills. -->
+  <ItemGroup>
+    <None Include="..\..\skills\**" Link="skills\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
   <!-- Ship the trace_processor_shell for the target RID next to the executable. -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And '$(OS)' != 'Windows_NT')">
     <None Include="..\..\tools\linux-x64\trace_processor_shell" Link="tools\trace_processor_shell" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />

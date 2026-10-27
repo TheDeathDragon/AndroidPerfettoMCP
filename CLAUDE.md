@@ -17,7 +17,8 @@ In Git Bash set `MSYS_NO_PATHCONV=1` before `adb push/pull /data/...`.
 Device capture is built in: `record_trace` (config `scenario` / `heap` / `boot` / `idle` or a .pbtxt), `record_boot`
 (REBOOTS the phone).
 
-Layout: `src/` server, `tests/` xunit + `tests/e2e/` stdio scripts, `configs/` embedded capture configs, `scripts/`
+Layout: `src/` server, `tests/` xunit + `tests/e2e/` stdio scripts, `configs/` embedded capture configs, `skills/`
+Claude Code skill (playbooks; shipped in the release, installed by `-AutoConfig` / `-Skill`), `scripts/`
 install / build-tp / stdlib index, `tools/` bundled trace_processor_shell (provenance: docs/01).
 This repository is public: no device serials, hosts, customer / product names or private trace names in it.
 Private material (device research, lab hosts, regression tests on private traces) lives in a separate repository

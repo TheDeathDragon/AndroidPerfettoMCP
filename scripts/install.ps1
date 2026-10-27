@@ -13,6 +13,8 @@
 
   Without a source the release asset is downloaded from GitHub (latest, or -Version); set GITHUB_TOKEN to
   download from a private repository.
+  -AutoConfig registers the server with Claude Code and installs the 'perfetto-analysis' skill; -Skill installs
+  only the skill.
 
 .EXAMPLE
   & ([scriptblock]::Create((iwr https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.ps1))) -AutoConfig
@@ -23,7 +25,8 @@ param(
     [Parameter(Position = 0)][string]$Source,
     [string]$Version,
     [string]$Prefix = (Join-Path $env:LOCALAPPDATA 'Programs\perfetto-mcp'),
-    [switch]$AutoConfig
+    [switch]$AutoConfig,
+    [switch]$Skill
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -111,6 +114,20 @@ try {
         }
         else {
             Write-Warning "claude CLI not found; register manually (see below)."
+        }
+    }
+    if ($AutoConfig -or $Skill) {
+        $skillSrc = Join-Path $src 'skills\perfetto-analysis'
+        if (Test-Path $skillSrc) {
+            $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $env:USERPROFILE '.claude' }
+            $skillDest = Join-Path $claudeDir 'skills\perfetto-analysis'
+            if (Test-Path $skillDest) { Remove-Item -Recurse -Force $skillDest }
+            New-Item -ItemType Directory -Force -Path (Split-Path $skillDest) | Out-Null
+            Copy-Item -Recurse -Force $skillSrc $skillDest
+            Write-Host "Installed the Claude Code skill 'perfetto-analysis' to $skillDest."
+        }
+        else {
+            Write-Warning "this package has no skills\perfetto-analysis; skill not installed."
         }
     }
     $json = ($launcher -replace '\\', '\\')

@@ -44,7 +44,8 @@ curl -fsSL https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/m
 
 安装脚本下载最新 [release](https://github.com/TheDeathDragon/AndroidPerfettoMCP/releases)，装到
 `%LOCALAPPDATA%\Programs\perfetto-mcp\` / `~/.local/share/perfetto-mcp/`（每个版本在 `versions/<id>/`），校验两个二进制并打印
-客户端配置。`-AutoConfig` / `--auto-config` 会执行 `claude mcp add perfetto --scope user`。其他参数：`-Version` /
+客户端配置。`-AutoConfig` / `--auto-config` 会执行 `claude mcp add perfetto --scope user` 并安装 [skill](#claude-code-skill)；
+`-Skill` / `--skill` 只安装 skill。其他参数：`-Version` /
 `--version <x.y.z>`；第一个参数给本地发布包或 publish 目录则安装它。服务运行中重新安装是安全的：几秒内自动切换到新版本。
 
 自包含发布，无需安装 .NET。`record_*` 与 `profile_threads` 需要 `adb` 在 `PATH` 中。
@@ -113,6 +114,12 @@ claude mcp add perfetto --scope user -- ~/.local/share/perfetto-mcp/perfetto-mcp
 工具的 `trace_id` 可省略，默认最近加载的 trace。典型下钻：`frame_intervals` 找到冻结 → 在同一窗口用
 `thread_state_breakdown`、`cpu_profile`、`cpu_frequency`、`wakeup_chain` 找原因。服务通过
 `initialize.result.instructions` 向 MCP 客户端提供精简的使用流程。
+
+## Claude Code skill
+
+[`skills/perfetto-analysis`](skills/perfetto-analysis/SKILL.md) 是给 Claude Code 的分场景分析流程：启动慢、掉帧与冻屏、ANR、
+CPU 高、待机功耗、内存与泄漏、IO、开机、操作耗时、A/B 对比，以及抓取指南和容易得出错误结论的数据陷阱。只在任务需要时加载。
+安装脚本加 `-AutoConfig` / `--auto-config` 或 `-Skill` / `--skill` 时装到 `~/.claude/skills/perfetto-analysis/`，也可以手动复制该目录。
 
 ## 配置项
 

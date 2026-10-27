@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- Fix: `android_gc` running / runnable / D-state times were 0 when the GC thread was split into a shadow utid (the
+  stdlib reads only the GC slice's utid); they are now summed over every utid of the thread.
+- Claude Code skill `perfetto-analysis` (`skills/`): per-scenario playbooks, capture guidance and data pitfalls. Shipped in
+  the release archives; the installers install it with `-AutoConfig` / `--auto-config` or `-Skill` / `--skill`.
+- Server instructions cut to ~1.8 KB (Claude Code shows only the first 4096 characters): workflow and rules; the per-tool
+  list is already in `tools/list` and the playbooks moved to the skill.
+
 ## [0.8.0] - 2026-10-27
 
 - Releases: GitHub Actions CI (Windows + Ubuntu: format check, build with warnings as errors, tests) and a tag-triggered

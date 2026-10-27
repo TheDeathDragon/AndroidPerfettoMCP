@@ -37,6 +37,7 @@ src/PerfettoMcp/
 └── Resources/stdlib_index.tsv 由 scripts/gen_stdlib_index.py 生成
 configs/                       内置采集配置（scenario / boot / heap / idle，嵌入可执行文件）
 tests/PerfettoMcp.Tests/       xunit（含真实 trace_processor 集成测试）
+skills/perfetto-analysis/       Claude Code skill：分场景分析流程、抓取指南、数据陷阱（随发布包分发）
 tests/e2e/                     stdio 端到端：smoke_test.py、reload_test.py、调用清单
 tools/{win-x64,linux-x64}/     随包 trace_processor_shell（来源见 01）
 scripts/                       install.ps1 / install.sh、build-tp.sh、gen_stdlib_index.py
@@ -122,3 +123,11 @@ stdlib 重模块首次 INCLUDE 的耗时随数据量超线性增长（同一模�
 - 超大 trace（数 GB）：预热单个模块超过 60 s 会杀掉 trace_processor，重载后又会再次预热（应记住超时、不再预热）；
   trace_processor 内存约为文件大小的 3 倍，常驻上限按个数而不是按内存计算
 - HTTP/SSE 传输（AndroidMCP 有 `HttpSseTransport`，按需移植）
+- 用 skill 实测时（各场景交给独立代理分析真实 trace）发现的工具问题：
+  - 所有工具输出都带上实际使用的 `trace_id`：多个代理共用一个服务时，默认 trace 会被别人的 `load_trace` 切走；
+  - `load_trace` 概览：trace 边界远大于数据实际覆盖的时间（零星的早 / 晚时间戳）时给出提示；
+  - `compare_traces`：名字里带每次运行细节的嵌套切片（`resynced to N`）产生误导性差值；`system.kswapd_cpu_ms` 无调度时应为 0
+    而不是 null；`app.sync_binder_ms` 拆分主线程与后台线程；
+  - 启动规则 `DEX2OAT` 在 installd 并非编译（如 `getUserSize`）时仍用该名字报 critical；
+  - ftrace 丢事件的健康提示只给 CPU 号，应说明是否落在被分析的窗口内；
+  - `android_binder_txns` 的 `slowest_breakdown` 取全进程最慢的调用，主线程的调用常被后台线程挤掉。

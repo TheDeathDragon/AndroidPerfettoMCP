@@ -91,13 +91,33 @@ internal sealed class AndroidGcTool : TraceToolBase
         string proc = ProcessSelector.Predicate(args) is { } pred
             ? $"g.upid IN (SELECT p.upid FROM process p WHERE {pred})"
             : "1";
-        string prelude = w.Prelude + "INCLUDE PERFETTO MODULE android.garbage_collection;\n";
-        string from = $"android_garbage_collection_events g WHERE {proc} AND {w.Overlaps("g.gc_ts", "g.gc_dur")}";
+        // The stdlib reads thread states of the GC slice's utid only; a GC thread split into a shadow utid keeps its
+        // sched data there, so states are summed over every utid of the same thread.
+        string prelude = w.Prelude + $"""
+            INCLUDE PERFETTO MODULE android.garbage_collection;
+            WITH g AS MATERIALIZED (
+              SELECT ROW_NUMBER() OVER (ORDER BY gc_ts, utid) AS k, * FROM android_garbage_collection_events g
+              WHERE {proc} AND {w.Overlaps("g.gc_ts", "g.gc_dur")}),
+            sib AS (
+              SELECT g.k, t2.utid FROM g JOIN thread t1 ON t1.utid = g.utid JOIN thread t2 ON t2.tid = t1.tid
+              WHERE t2.utid = t1.utid OR t2.upid = t1.upid OR EXISTS (SELECT 1 FROM process ps WHERE ps.upid IN (t1.upid, t2.upid)
+                AND ps.name IS NULL AND ps.cmdline IS NULL AND ps.pid = t1.tid)),
+            st AS (
+              SELECT k, SUM(IIF(state = 'Running', d, 0)) AS running, SUM(IIF(state IN ('R', 'R+'), d, 0)) AS runnable,
+                SUM(IIF(state GLOB 'D*', d, 0)) AS d_state
+              FROM (SELECT sib.k, ts.state,
+                      MIN(IIF(ts.dur < 0, g.gc_ts + g.gc_dur, ts.ts + ts.dur), g.gc_ts + g.gc_dur) - MAX(ts.ts, g.gc_ts) AS d
+                    FROM sib JOIN g USING (k) JOIN thread_state ts ON ts.utid = sib.utid
+                      AND ts.ts < g.gc_ts + g.gc_dur AND (ts.dur < 0 OR ts.ts + ts.dur > g.gc_ts))
+              GROUP BY k)
+
+            """;
+        string from = "g LEFT JOIN st USING (k)";
 
         JsonObject report = new() { ["window"] = w.Description };
         report["per_process"] = await SectionAsync(s, $"""
             {prelude}SELECT g.upid, g.process_name, COUNT(*) AS gcs, ROUND(SUM(g.gc_dur) / 1e6, 1) AS total_ms,
-                   ROUND(SUM(g.gc_running_dur) / 1e6, 1) AS running_ms, ROUND(SUM(g.reclaimed_mb), 1) AS reclaimed_mb,
+                   ROUND(SUM(IFNULL(st.running, 0)) / 1e6, 1) AS running_ms, ROUND(SUM(g.reclaimed_mb), 1) AS reclaimed_mb,
                    ROUND(MIN(g.min_heap_mb), 1) AS min_heap_mb, ROUND(MAX(g.max_heap_mb), 1) AS max_heap_mb,
                    ROUND(100.0 * SUM(g.gc_dur) / ({w.End} - {w.Start}), 1) AS pct_of_window
             FROM {from} GROUP BY g.upid ORDER BY SUM(g.gc_dur) DESC LIMIT 20
@@ -105,8 +125,8 @@ internal sealed class AndroidGcTool : TraceToolBase
         report["longest"] = await SectionAsync(s, $"""
             {prelude}SELECT g.gc_ts, ROUND(g.gc_dur / 1e6, 1) AS dur_ms, g.process_name, g.thread_name, g.gc_type,
                    g.is_mark_compact, ROUND(g.reclaimed_mb, 1) AS reclaimed_mb,
-                   ROUND(g.gc_running_dur / 1e6, 1) AS running_ms, ROUND(g.gc_runnable_dur / 1e6, 1) AS runnable_ms,
-                   ROUND((g.gc_unint_io_dur + g.gc_unint_non_io_dur) / 1e6, 1) AS d_state_ms
+                   ROUND(IFNULL(st.running, 0) / 1e6, 1) AS running_ms, ROUND(IFNULL(st.runnable, 0) / 1e6, 1) AS runnable_ms,
+                   ROUND(IFNULL(st.d_state, 0) / 1e6, 1) AS d_state_ms
             FROM {from} ORDER BY g.gc_dur DESC LIMIT {limit}
             """, ctx, limit).ConfigureAwait(false);
         return ToolCallResult.Json(report);

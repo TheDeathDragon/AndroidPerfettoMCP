@@ -46,7 +46,8 @@ curl -fsSL https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/m
 The installers download the latest [release](https://github.com/TheDeathDragon/AndroidPerfettoMCP/releases), install
 it to `%LOCALAPPDATA%\Programs\perfetto-mcp\` / `~/.local/share/perfetto-mcp/` (each version in `versions/<id>/`),
 verify both binaries and print the client config. `-AutoConfig` / `--auto-config` runs
-`claude mcp add perfetto --scope user`. Other options: `-Version` / `--version <x.y.z>`; a local archive or publish
+`claude mcp add perfetto --scope user` and installs the [skill](#claude-code-skill); `-Skill` / `--skill` installs only
+the skill. Other options: `-Version` / `--version <x.y.z>`; a local archive or publish
 directory as the first argument installs that instead. Re-running an installer while the server is in use is safe:
 the running server switches to the new version within seconds.
 
@@ -116,6 +117,14 @@ Loading a very large trace can take longer than the client's tool timeout; raise
 Tools take an optional `trace_id` and default to the most recently loaded trace. A typical drill-down: `frame_intervals`
 finds a freeze, then `thread_state_breakdown`, `cpu_profile`, `cpu_frequency` and `wakeup_chain` over the same window
 explain it. The server sends a condensed workflow to MCP clients in `initialize.result.instructions`.
+
+## Claude Code skill
+
+[`skills/perfetto-analysis`](skills/perfetto-analysis/SKILL.md) holds step-by-step playbooks for Claude Code: slow
+launch, jank and freezes, ANR, high CPU, standby power, memory and leaks, IO, boot, operation latency and A/B
+comparison, plus capture guidance and the data pitfalls that lead to wrong conclusions. Claude loads it only when a
+task needs it. The installers put it in `~/.claude/skills/perfetto-analysis/` (`-AutoConfig` / `--auto-config`
+or `-Skill` / `--skill`); or copy the directory there yourself.
 
 ## Configuration
 
