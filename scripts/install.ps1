@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Install or hot-update perfetto-mcp from a release zip or a publish directory (Windows).
+  Install or hot-update perfetto-mcp (Windows): the latest GitHub release, or a local release zip / publish directory.
 
 .DESCRIPTION
   Layout under -Prefix:
@@ -11,19 +11,46 @@
   directory, current.txt is switched atomically and the running supervisor swaps workers within
   seconds (notifying the client that the tool list changed).
 
+  Without a source the release asset is downloaded from GitHub (latest, or -Version); set GITHUB_TOKEN to
+  download from a private repository.
+
 .EXAMPLE
-  .\install.ps1 .\perfetto-mcp-0.2.0-win-x64.zip -AutoConfig
+  & ([scriptblock]::Create((iwr https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.ps1))) -AutoConfig
+  .\install.ps1 .\perfetto-mcp-0.8.0-win-x64.zip -AutoConfig
   .\install.ps1 ..\publish\win-x64
 #>
 param(
-    [Parameter(Mandatory = $true, Position = 0)][string]$Source,
+    [Parameter(Position = 0)][string]$Source,
+    [string]$Version,
     [string]$Prefix = (Join-Path $env:LOCALAPPDATA 'Programs\perfetto-mcp'),
     [switch]$AutoConfig
 )
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $tmp = $null
+$dl = $null
 try {
+    if (-not $Source) {
+        $headers = @{ 'User-Agent' = 'perfetto-mcp-installer' }
+        if ($env:GITHUB_TOKEN) { $headers['Authorization'] = "Bearer $env:GITHUB_TOKEN" }
+        $api = 'https://api.github.com/repos/TheDeathDragon/AndroidPerfettoMCP/releases'
+        $rel = if ($Version) { Invoke-RestMethod -Headers $headers "$api/tags/v$($Version -replace '^v', '')" } else { Invoke-RestMethod -Headers $headers "$api/latest" }
+        $asset = $rel.assets | Where-Object { $_.name -like 'perfetto-mcp-*-win-x64.zip' } | Select-Object -First 1
+        if (-not $asset) { throw "no win-x64 zip in release $($rel.tag_name)" }
+        Write-Host "Downloading $($asset.name) ($([math]::Round($asset.size / 1MB, 1)) MB) from release $($rel.tag_name)"
+        $dl = Join-Path ([IO.Path]::GetTempPath()) ("perfetto-mcp-dl-" + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $dl | Out-Null
+        $Source = Join-Path $dl $asset.name
+        # Private repositories serve assets only through the API URL with a token.
+        if ($env:GITHUB_TOKEN) {
+            Invoke-WebRequest -Headers ($headers + @{ 'Accept' = 'application/octet-stream' }) -Uri $asset.url -OutFile $Source
+        }
+        else {
+            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $Source
+        }
+    }
     $src = (Resolve-Path $Source).Path
     if (Test-Path $src -PathType Leaf) {
         $tmp = Join-Path ([IO.Path]::GetTempPath()) ("perfetto-mcp-" + [Guid]::NewGuid().ToString('N'))
@@ -92,5 +119,7 @@ try {
     Write-Host "JSON config:  { `"mcpServers`": { `"perfetto`": { `"command`": `"$json`", `"args`": [`"--supervise`"] } } }"
 }
 finally {
-    if ($tmp -and (Test-Path $tmp)) { Remove-Item -Recurse -Force $tmp }
+    foreach ($d in @($tmp, $dl)) {
+        if ($d -and (Test-Path $d)) { Remove-Item -Recurse -Force $d }
+    }
 }

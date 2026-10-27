@@ -1,5 +1,7 @@
 # AndroidPerfettoMCP
 
+[![CI](https://github.com/TheDeathDragon/AndroidPerfettoMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/TheDeathDragon/AndroidPerfettoMCP/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/TheDeathDragon/AndroidPerfettoMCP)](https://github.com/TheDeathDragon/AndroidPerfettoMCP/releases)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh.md)
@@ -17,24 +19,35 @@ Windows and Linux (Ubuntu 18.04+), ships its own `trace_processor_shell` v58.2.
 
 ## Install
 
-Get a release archive (`perfetto-mcp-<version>-win-x64.zip` / `perfetto-mcp-<version>-linux-x64.tar.gz`) from the
-GitHub releases, or build one (see [Build from source](#build-from-source)). Then:
-
 Windows (PowerShell):
 
 ```powershell
-.\scripts\install.ps1 .\perfetto-mcp-<version>-win-x64.zip -AutoConfig
+iwr https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.ps1 | iex
+```
+
+Or also register it with Claude Code:
+
+```powershell
+& ([scriptblock]::Create((iwr https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.ps1))) -AutoConfig
 ```
 
 Linux (x86_64 with AVX2, glibc 2.23+):
 
 ```bash
-sh scripts/install.sh perfetto-mcp-<version>-linux-x64.tar.gz --auto-config
+curl -fsSL https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.sh | sh
 ```
 
-The installers copy the server to `%LOCALAPPDATA%\Programs\perfetto-mcp\` / `~/.local/share/perfetto-mcp/` (each
-version in `versions/<id>/`), verify both binaries and print the client config. `-AutoConfig` / `--auto-config` runs
-`claude mcp add perfetto --scope user` for Claude Code. Re-running an installer while the server is in use is safe:
+Or also register it with Claude Code:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.sh | sh -s -- --auto-config
+```
+
+The installers download the latest [release](https://github.com/TheDeathDragon/AndroidPerfettoMCP/releases), install
+it to `%LOCALAPPDATA%\Programs\perfetto-mcp\` / `~/.local/share/perfetto-mcp/` (each version in `versions/<id>/`),
+verify both binaries and print the client config. `-AutoConfig` / `--auto-config` runs
+`claude mcp add perfetto --scope user`. Other options: `-Version` / `--version <x.y.z>`; a local archive or publish
+directory as the first argument installs that instead. Re-running an installer while the server is in use is safe:
 the running server switches to the new version within seconds.
 
 The build is self-contained (no .NET runtime needed). `record_*` and `profile_threads` need `adb` on `PATH`.

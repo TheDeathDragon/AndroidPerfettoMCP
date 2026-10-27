@@ -1,7 +1,5 @@
 # trace_processor_shell 在 Ubuntu 18.04 上的兼容与自编译
 
-> 记录时间：2026-10-23。结论已在真机验证。
-
 ## 1. 问题
 
 `perfetto-mcp-rs` 在 Ubuntu 18.04 上无法使用。

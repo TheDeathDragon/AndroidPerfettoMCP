@@ -1,5 +1,7 @@
 # AndroidPerfettoMCP
 
+[![CI](https://github.com/TheDeathDragon/AndroidPerfettoMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/TheDeathDragon/AndroidPerfettoMCP/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/TheDeathDragon/AndroidPerfettoMCP)](https://github.com/TheDeathDragon/AndroidPerfettoMCP/releases)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh.md)
@@ -16,24 +18,34 @@
 
 ## 安装
 
-从 GitHub Releases 获取发布包（`perfetto-mcp-<版本>-win-x64.zip` / `perfetto-mcp-<版本>-linux-x64.tar.gz`），
-或自行构建（见[从源码构建](#从源码构建)），然后：
-
 Windows（PowerShell）：
 
 ```powershell
-.\scripts\install.ps1 .\perfetto-mcp-<版本>-win-x64.zip -AutoConfig
+iwr https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.ps1 | iex
+```
+
+同时注册到 Claude Code：
+
+```powershell
+& ([scriptblock]::Create((iwr https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.ps1))) -AutoConfig
 ```
 
 Linux（x86_64，需 AVX2，glibc 2.23+）：
 
 ```bash
-sh scripts/install.sh perfetto-mcp-<版本>-linux-x64.tar.gz --auto-config
+curl -fsSL https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.sh | sh
 ```
 
-安装脚本把服务装到 `%LOCALAPPDATA%\Programs\perfetto-mcp\` / `~/.local/share/perfetto-mcp/`（每个版本在
-`versions/<id>/`），校验两个二进制并打印客户端配置。`-AutoConfig` / `--auto-config` 会执行
-`claude mcp add perfetto --scope user`。服务运行中重新安装是安全的：几秒内自动切换到新版本。
+同时注册到 Claude Code：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/TheDeathDragon/AndroidPerfettoMCP/main/scripts/install.sh | sh -s -- --auto-config
+```
+
+安装脚本下载最新 [release](https://github.com/TheDeathDragon/AndroidPerfettoMCP/releases)，装到
+`%LOCALAPPDATA%\Programs\perfetto-mcp\` / `~/.local/share/perfetto-mcp/`（每个版本在 `versions/<id>/`），校验两个二进制并打印
+客户端配置。`-AutoConfig` / `--auto-config` 会执行 `claude mcp add perfetto --scope user`。其他参数：`-Version` /
+`--version <x.y.z>`；第一个参数给本地发布包或 publish 目录则安装它。服务运行中重新安装是安全的：几秒内自动切换到新版本。
 
 自包含发布，无需安装 .NET。`record_*` 与 `profile_threads` 需要 `adb` 在 `PATH` 中。
 

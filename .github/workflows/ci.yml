@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Verify formatting
+        run: dotnet format PerfettoMcp.slnx --verify-no-changes
+
+      - name: Build
+        run: dotnet build PerfettoMcp.slnx -c Release -warnaserror --nologo
+
+      # Integration tests drive the bundled trace_processor_shell of this OS.
+      - name: Test
+        run: dotnet test PerfettoMcp.slnx -c Release --no-build --nologo

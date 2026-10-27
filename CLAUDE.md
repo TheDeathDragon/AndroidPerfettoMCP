@@ -77,3 +77,6 @@ keeps only a server's startup stderr. Live CLR exceptions of a running process: 
 - New tool: subclass `TraceToolBase`, declare params with `SchemaBuilder` (closed schema), register in
   `Program.cs`. Expected failures throw `ToolException`; interpolate strings via `SqlText.Literal`.
 - Clean up temp files/dirs immediately after use.
+- Commit messages: a single title line, no body, no trailers.
+- Release: bump `<Version>` in `src/PerfettoMcp/PerfettoMcp.csproj`, add a `## [x.y.z]` CHANGELOG section, push tag
+  `v<x.y.z>`; `.github/workflows/release.yml` tests both RIDs and publishes the GitHub release (CI: `ci.yml`).
