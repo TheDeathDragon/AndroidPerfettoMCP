@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-27
+
+- Releases: GitHub Actions CI (Windows + Ubuntu: format check, build with warnings as errors, tests) and a tag-triggered
+  release workflow publishing `perfetto-mcp-<version>-win-x64.zip` and `perfetto-mcp-<version>-linux-x64.tar.gz`.
+- `scripts/install.ps1` / `scripts/install.sh` without a source download and install the latest release (`-Version` /
+  `--version` for a specific one; `GITHUB_TOKEN` for a private repository); local archives and publish directories still work.
+- Repository layout for publishing: `docs/`, `tests/e2e/` (stdio smoke and hot-update scripts), `scripts/build-tp.sh`,
+  `tools/README.md` (provenance and checksums of the bundled trace_processor_shell), Apache-2.0 license, README in
+  English and Chinese.
 - Review fixes (docs/04, fourth round): `record_trace` / `record_boot` / `unload_trace` also hold back default-trace calls;
   the supervisor retries a crash restart whose new worker died at startup; the logcat bundle is reused only for the
   same files and built only when loaded; the host logcat stream never throws in cleanup and leaves the adb server
