@@ -1,0 +1,15 @@
+bin/
+obj/
+publish/
+*.user
+.vs/
+.idea/
+*.swp
+TestResults/
+# Reference projects keep their own git history.
+ref_proj/
+# Private lab repository (device research, private regression tests), cloned here when available.
+lab/
+lab-stage/
+# Claude Code session state.
+.claude/scheduled_tasks.lock

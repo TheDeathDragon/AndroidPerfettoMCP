@@ -1,0 +1,12 @@
+[
+ ["cpu_top_threads", {"trace_id": "t1", "group_by": "process", "limit": 2}],
+ ["android_logs", {"trace_id": "t1", "contains": "INfc", "limit": 2, "max_msg_len": 120}],
+ ["cpu_top_threads", {"trace_id": "t2", "process_name": "/vendor/bin/hw/android.hardware.camera.provider-service",
+                      "group_by": "thread_name", "ts_start": 9526600000000, "ts_end": 9528200000000, "limit": 2}],
+ ["execute_sql", {"trace_id": "t2", "sql": "SELECT name, value FROM stats WHERE severity IN ('error', 'data_loss') AND value > 0"}],
+ ["event_latency", {"trace_id": "t2", "anchor_log": "op ", "anchor_tag": "PerfMcpCam",
+                    "target_globs": ["Cam3Stream::previewFirstFrameTag*", "CameraAppTrace addImage cost"]}],
+ ["android_startups", {"trace_id": "t3", "startup_id": 3, "critical_path": false, "limit": 1}],
+ ["list_traces", {}],
+ ["server_stats", {"limit": 3}]
+]

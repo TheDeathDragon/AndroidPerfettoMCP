@@ -1,0 +1,30 @@
+# Java heap dump (ART heap graph) of one process; analyze with java_heap.
+# record_trace(config="heap", process="<package / process name>") substitutes PROCESS below.
+# The dump pauses the process for a moment (a full GC + heap walk); duration only needs to cover it.
+buffers {
+  size_kb: 262144
+  fill_policy: DISCARD
+}
+data_sources {
+  config {
+    name: "android.java_hprof"
+    java_hprof_config {
+      process_cmdline: "PROCESS"
+      dump_smaps: true
+    }
+  }
+}
+data_sources {
+  config {
+    name: "android.packages_list"
+  }
+}
+data_sources {
+  config {
+    name: "linux.process_stats"
+    process_stats_config {
+      scan_all_processes_on_start: true
+    }
+  }
+}
+duration_ms: 15000

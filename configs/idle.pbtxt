@@ -1,0 +1,76 @@
+# Perfetto config for idle / standby / power measurements (screen-off or screen-on idle, background drain).
+# The scenario config's process_stats poll (every 1 s over ~600 processes) and atrace categories were 42-46 % of all
+# CPU in a 30 s screen-off trace: here the process list is scanned once at start, memory
+# counters are sampled every 5 s and only scheduling / wakeup / frequency / idle / suspend events are recorded.
+# Device: push to /data/misc/perfetto-configs/ (SELinux); `record_trace config=idle` does this.
+buffers {
+  size_kb: 32768
+  fill_policy: RING_BUFFER
+}
+buffers {
+  size_kb: 4096
+  fill_policy: RING_BUFFER
+}
+buffers {
+  size_kb: 8192
+  fill_policy: RING_BUFFER
+}
+data_sources {
+  config {
+    name: "linux.ftrace"
+    target_buffer: 0
+    ftrace_config {
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "sched/sched_waking"
+      ftrace_events: "sched/sched_wakeup_new"
+      ftrace_events: "sched/sched_process_exit"
+      ftrace_events: "sched/sched_process_free"
+      ftrace_events: "sched/sched_blocked_reason"
+      ftrace_events: "task/task_newtask"
+      ftrace_events: "task/task_rename"
+      ftrace_events: "power/cpu_frequency"
+      ftrace_events: "power/cpu_idle"
+      ftrace_events: "power/suspend_resume"
+      ftrace_events: "power/wakeup_source_activate"
+      ftrace_events: "power/wakeup_source_deactivate"
+      ftrace_events: "irq/irq_handler_entry"
+      ftrace_events: "irq/irq_handler_exit"
+      symbolize_ksyms: true
+      buffer_size_kb: 8192
+      drain_period_ms: 1000
+    }
+  }
+}
+data_sources {
+  config {
+    name: "linux.process_stats"
+    target_buffer: 1
+    process_stats_config {
+      scan_all_processes_on_start: true
+    }
+  }
+}
+data_sources {
+  config {
+    name: "linux.sys_stats"
+    target_buffer: 1
+    sys_stats_config {
+      meminfo_period_ms: 5000
+      stat_period_ms: 5000
+      stat_counters: STAT_CPU_TIMES
+    }
+  }
+}
+data_sources {
+  config {
+    name: "android.log"
+    target_buffer: 2
+    android_log_config {
+      log_ids: LID_DEFAULT
+      log_ids: LID_EVENTS
+      log_ids: LID_SYSTEM
+      min_prio: PRIO_INFO
+    }
+  }
+}
+duration_ms: 30000

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/PerfettoMcp/PerfettoMcp.csproj" />
+  <Project Path="tests/PerfettoMcp.Tests/PerfettoMcp.Tests.csproj" />
+</Solution>

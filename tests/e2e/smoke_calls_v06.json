@@ -1,0 +1,165 @@
+[
+ [
+  "server_stats",
+  {
+   "clear": true,
+   "limit": 1
+  }
+ ],
+ [
+  "android_startups",
+  {
+   "trace_id": "t1",
+   "startup_id": 5,
+   "limit": 2
+  }
+ ],
+ [
+  "memory_summary",
+  {
+   "trace_id": "t1",
+   "limit": 2
+  }
+ ],
+ [
+  "process_memory",
+  {
+   "trace_id": "t1",
+   "process_name": "com.android.settings"
+  }
+ ],
+ [
+  "io_summary",
+  {
+   "trace_id": "t1",
+   "limit": 2
+  }
+ ],
+ [
+  "lock_contention",
+  {
+   "trace_id": "t1",
+   "limit": 2
+  }
+ ],
+ [
+  "main_thread_blocking_calls",
+  {
+   "trace_id": "t1",
+   "limit": 2
+  }
+ ],
+ [
+  "android_binder_txns",
+  {
+   "trace_id": "t1",
+   "limit": 2
+  }
+ ],
+ [
+  "android_jank_frames",
+  {
+   "trace_id": "t1",
+   "limit": 2
+  }
+ ],
+ [
+  "frame_intervals",
+  {
+   "trace_id": "t1",
+   "process_name": "com.android.settings"
+  }
+ ],
+ [
+  "cpu_frequency",
+  {
+   "trace_id": "t1"
+  }
+ ],
+ [
+  "android_logs",
+  {
+   "trace_id": "t1",
+   "limit": 3
+  }
+ ],
+ [
+  "java_heap",
+  {
+   "trace_id": "t2",
+   "limit": 3
+  }
+ ],
+ [
+  "boot_timeline",
+  {
+   "trace_id": "t3",
+   "limit": 3
+  }
+ ],
+ [
+  "wakeup_chain",
+  {
+   "trace_id": "t1",
+   "process_name": "com.android.settings",
+   "ts_start": 1077838364613,
+   "ts_end": 1078917964613,
+   "limit": 1
+  }
+ ],
+ [
+  "android_startups",
+  {
+   "trace_id": "t1",
+   "startup_id": 5,
+   "limit": 1,
+   "critical_path": true
+  }
+ ],
+ [
+  "java_heap",
+  {
+   "trace_id": "t2",
+   "limit": 1,
+   "class_name": "com.android.systemui.log.LogMessageImpl",
+   "paths": 1
+  }
+ ],
+ [
+  "android_anrs",
+  {
+   "trace_id": "t4",
+   "limit": 1
+  }
+ ],
+ [
+  "compare_traces",
+  {
+   "trace_a": "t1",
+   "trace_b": "t2"
+  }
+ ],
+ [
+  "execute_sql",
+  {
+   "trace_id": "t2",
+   "sql": "INCLUDE PERFETTO MODULE android.memory.heap_graph.class_relationship; SELECT * FROM android_heap_graph_class_find_descendants LIMIT 1"
+  }
+ ],
+ [
+  "record_trace",
+  {
+   "duration_s": 5
+  }
+ ],
+ [
+  "list_traces",
+  {}
+ ],
+ [
+  "server_stats",
+  {
+   "limit": 5
+  }
+ ]
+]

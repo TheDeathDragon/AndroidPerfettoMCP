@@ -1,0 +1,109 @@
+# Perfetto config for interactive scenarios (app start, scrolling, camera, lock/unlock).
+# Device: adb push scenario.pbtxt /data/misc/perfetto-configs/   (perfetto cannot read /data/local/tmp: SELinux)
+#         adb shell perfetto --txt -c /data/misc/perfetto-configs/scenario.pbtxt -o /data/misc/perfetto-traces/<name>.pftrace   (add --background to drive the scenario meanwhile)
+# No linux.perf here on purpose: callstack sampling costs >1 s CPU and hundreds of MB.
+buffers {
+  size_kb: 98304
+  fill_policy: RING_BUFFER
+}
+buffers {
+  size_kb: 8192
+  fill_policy: RING_BUFFER
+}
+# Buffer 2 holds logcat alone: a log burst (camera HAL ~2000 lines/s) wrapped the shared buffer and overwrote the
+# initial process scan, leaving most processes nameless.
+buffers {
+  size_kb: 32768
+  fill_policy: RING_BUFFER
+}
+data_sources {
+  config {
+    name: "linux.ftrace"
+    target_buffer: 0
+    ftrace_config {
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "sched/sched_waking"
+      ftrace_events: "sched/sched_wakeup_new"
+      ftrace_events: "sched/sched_process_exit"
+      ftrace_events: "sched/sched_process_free"
+      ftrace_events: "sched/sched_blocked_reason"
+      ftrace_events: "task/task_newtask"
+      ftrace_events: "task/task_rename"
+      ftrace_events: "power/cpu_frequency"
+      ftrace_events: "power/cpu_idle"
+      ftrace_events: "power/suspend_resume"
+      ftrace_events: "block/block_rq_issue"
+      ftrace_events: "block/block_rq_complete"
+      ftrace_events: "vmscan/mm_vmscan_direct_reclaim_begin"
+      ftrace_events: "vmscan/mm_vmscan_direct_reclaim_end"
+      ftrace_events: "lowmemorykiller/lowmemory_kill"
+      ftrace_events: "oom/oom_score_adj_update"
+      ftrace_events: "ftrace/print"
+      atrace_categories: "am"
+      atrace_categories: "wm"
+      atrace_categories: "gfx"
+      atrace_categories: "view"
+      atrace_categories: "input"
+      atrace_categories: "dalvik"
+      atrace_categories: "res"
+      atrace_categories: "hal"
+      atrace_categories: "aidl"
+      atrace_categories: "binder_driver"
+      atrace_categories: "ss"
+      atrace_categories: "pm"
+      atrace_categories: "power"
+      atrace_categories: "camera"
+      atrace_apps: "*"
+      symbolize_ksyms: true
+      buffer_size_kb: 16384
+      drain_period_ms: 250
+    }
+  }
+}
+data_sources {
+  config {
+    name: "android.surfaceflinger.frametimeline"
+    target_buffer: 0
+  }
+}
+data_sources {
+  config {
+    name: "linux.process_stats"
+    target_buffer: 1
+    process_stats_config {
+      scan_all_processes_on_start: true
+      proc_stats_poll_ms: 1000
+    }
+  }
+}
+data_sources {
+  config {
+    name: "linux.sys_stats"
+    target_buffer: 1
+    sys_stats_config {
+      meminfo_period_ms: 1000
+      vmstat_period_ms: 1000
+      stat_period_ms: 1000
+      stat_counters: STAT_CPU_TIMES
+    }
+  }
+}
+data_sources {
+  config {
+    name: "android.log"
+    target_buffer: 2
+    android_log_config {
+      log_ids: LID_DEFAULT
+      log_ids: LID_EVENTS
+      log_ids: LID_SYSTEM
+      log_ids: LID_KERNEL
+    }
+  }
+}
+data_sources {
+  config {
+    name: "android.packages_list"
+    target_buffer: 1
+  }
+}
+duration_ms: 30000
