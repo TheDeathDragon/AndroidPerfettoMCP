@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-27
+
 - Fix: `android_gc` running / runnable / D-state times were 0 when the GC thread was split into a shadow utid (the
   stdlib reads only the GC slice's utid); they are now summed over every utid of the thread.
 - Claude Code skill `perfetto-analysis` (`skills/`): per-scenario playbooks, capture guidance and data pitfalls. Shipped in

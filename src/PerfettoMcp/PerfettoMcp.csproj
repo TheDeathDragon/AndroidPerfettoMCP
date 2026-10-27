@@ -9,7 +9,7 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>PerfettoMcp</RootNamespace>
     <AssemblyName>perfetto-mcp</AssemblyName>
-    <Version>0.8.0</Version>
+    <Version>0.8.1</Version>
     <!-- No libicu dependency on Ubuntu 18.04. -->
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
